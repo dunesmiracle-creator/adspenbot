@@ -97,6 +97,9 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     print("BOT STARTING...")
+
+    print("TOKEN LOADED:", bool(BOT_TOKEN))
+    
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     print("BOT BUILT...")
