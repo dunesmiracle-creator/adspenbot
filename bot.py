@@ -7,7 +7,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 import os
 
-BOT_TOKEN = os.getenv("8903394338:AAFhHi0fof0yoB-SI-8l5SDqrhgkzzTnERU")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 COOLDOWN = 180
 DAILY_LIMIT = 150
