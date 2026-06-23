@@ -5,7 +5,9 @@ from datetime import datetime
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-BOT_TOKEN = "8903394338:AAFhHi0fof0yoB-SI-8l5SDqrhgkzzTnERU"
+import os
+
+BOT_TOKEN = os.getenv("8903394338:AAFhHi0fof0yoB-SI-8l5SDqrhgkzzTnERU")
 
 COOLDOWN = 180
 DAILY_LIMIT = 150
