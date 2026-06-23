@@ -99,6 +99,8 @@ def main():
     print("BOT STARTING...")
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
+    print("BOT BUILT...")
+    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("next", next_link))
     app.add_handler(CommandHandler("addlink", addlink))
