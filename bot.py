@@ -68,26 +68,27 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("🔥 NEW TIMER CODE RUNNING")
 
     user_id = update.effective_user.id
-    now = time.time
+now = time.time()
 
-    print("🔥 TIME DEBUG START")
+print("🔥 TIME DEBUG START")
 print(f"now = {now}")
 print(f"user_id = {user_id}")
 print(f"last = {user_last_time.get(user_id, 0)}")
 print(f"COOLDOWN = {COOLDOWN}")
 print(f"diff = {now - user_last_time.get(user_id, 0)}")
 print("🔥 TIME DEBUG END")
-    today = datetime.now().strftime("%Y-%m-%d")
 
-    if user_id not in user_daily_count or user_daily_count[user_id]["date"] != today:
-        user_daily_count[user_id] = {"date": today, "count": 0}
-        user_sent_links[user_id] = {"date": today, "links": set()}
+today = datetime.now().strftime("%Y-%m-%d")
 
-    if user_daily_count[user_id]["count"] >= DAILY_LIMIT:
-        await update.message.reply_text("Daily limit reached.")
-        return
+if user_id not in user_daily_count or user_daily_count[user_id]["date"] != today:
+    user_daily_count[user_id] = {"date": today, "count": 0}
+    user_sent_links[user_id] = {"date": today, "links": set()}
 
-    last = user_last_time.get(user_id, 0)
+if user_daily_count[user_id]["count"] >= DAILY_LIMIT:
+    await update.message.reply_text("Daily limit reached.")
+    return
+
+last = user_last_time.get(user_id, 0)
 
     # 🔴 COOLDOWN BLOCK (correctly indented)
     if now - last < COOLDOWN:
