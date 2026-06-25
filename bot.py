@@ -137,6 +137,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     if query.data == "next":
+
         cursor.execute("SELECT url FROM links")
         links = [row[0] for row in cursor.fetchall()]
 
@@ -145,16 +146,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         link = random.choice(links)
+
         await query.message.reply_text(f"🔗 {link}")
 
     elif query.data == "stats":
+
         cursor.execute("SELECT COUNT(*) FROM links")
         count = cursor.fetchone()[0]
-        await query.message.reply_text(f"📊 Database has {count} links.")
+
+        await query.message.reply_text(
+            f"📊 Database has {count} links."
+        )
 
     elif query.data == "help":
+
         await query.message.reply_text(
-            "Use 📩 Get Link or type /next"
+            "Use 📩 Get Link to receive an ad."
         )
 
 async def migrate(update: Update, context: ContextTypes.DEFAULT_TYPE):
