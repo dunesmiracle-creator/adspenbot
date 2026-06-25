@@ -8,6 +8,11 @@ import sqlite3
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
 
+def send_msg(update, text):
+    if update.callback_query:
+        return update.callback_query.message.reply_text(text)
+    return update.message.reply_text(text)
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 ADMIN_ID = 958970107
@@ -75,14 +80,17 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     last = user_last_time.get(user_id, 0)
 
     if now - last < COOLDOWN:
-        remaining = int((COOLDOWN - (now - last)) // 60) + 1
-        remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
+    remaining_seconds = int(COOLDOWN - (now - last))
+    remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
 
-        await update.message.reply_text(
-            f"⏳ Wait {remaining} min\n📊 Remaining today: {remaining_today}"
-        )
-        return
+    minutes = remaining_seconds // 60
+    seconds = remaining_seconds % 60
 
+    await update.message.reply_text(
+        f"⏳ Wait {minutes}m {seconds}s\n"
+        f"📊 Remaining today: {remaining_today}"
+    )
+    return
     cursor.execute("SELECT url FROM links")
     links = [row[0] for row in cursor.fetchall()]
 
