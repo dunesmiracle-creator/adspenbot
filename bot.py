@@ -194,6 +194,8 @@ def main():
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
+    app.bot.delete_webhook(drop_pending_updates=True)
+
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("next", next_link))
     app.add_handler(CommandHandler("addlink", addlink))
