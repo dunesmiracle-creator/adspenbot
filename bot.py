@@ -148,7 +148,8 @@ async def show_menu(update: Update):
         reply_markup=reply_markup
     )
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def button_handler(update: 
+Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def migrate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
