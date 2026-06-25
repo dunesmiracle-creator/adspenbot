@@ -84,13 +84,36 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # DATABASE FETCH (ONLY SOURCE OF TRUTH)
     cursor.execute("SELECT url FROM links")
-    rows = cursor.fetchall()
+links = [row[0] for row in cursor.fetchall()]
 
-    if not rows:
-        await update.message.reply_text("No links available.")
-        return
+if not links:
+    await update.message.reply_text("No links available.")
+    return
 
-    link = random.choice(rows)[0]
+today = datetime.now().strftime("%Y-%m-%d")
+
+# init user storage
+if user_id not in user_sent_links:
+    user_sent_links[user_id] = {}
+
+# reset daily record if new day
+if user_sent_links[user_id].get("date") != today:
+    user_sent_links[user_id] = {"date": today, "links": set()}
+
+sent_today = user_sent_links[user_id]["links"]
+
+# filter out already sent links today
+available = [link for link in links if link not in sent_today]
+
+# if all used today → reset cycle
+if not available:
+    user_sent_links[user_id]["links"] = set()
+    available = links
+
+link = random.choice(available)
+
+# mark as sent today
+user_sent_links[user_id]["links"].add(link)
 
     # update tracking AFTER successful send
     user_last_time[user_id] = now
