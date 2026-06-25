@@ -5,8 +5,8 @@ from datetime import datetime
 
 import sqlite3
 
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
@@ -115,9 +115,9 @@ link = random.choice(available)
 # mark as sent today
 user_sent_links[user_id]["links"].add(link)
 
-    # update tracking AFTER successful send
-    user_last_time[user_id] = now
-    user_daily_count[user_id]["count"] += 1
+# update tracking AFTER successful send
+user_last_time[user_id] = now
+user_daily_count[user_id]["count"] += 1
 
     await update.message.reply_text(f"🔗 {link}")
 
@@ -129,6 +129,22 @@ async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     count = cursor.fetchone()[0]
 
     await update.message.reply_text(f"Database has {count} links.")
+
+async def show_menu(update: Update):
+    keyboard = [
+        [InlineKeyboardButton("📩 Get Link", callback_data="next")],
+        [InlineKeyboardButton("📊 Stats", callback_data="stats")],
+        [InlineKeyboardButton("ℹ️ Help", callback_data="help")]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        "🚀 AspenBot Menu",
+        reply_markup=reply_markup
+    )
+
+async def button_handler(...)
 
 async def migrate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -164,6 +180,7 @@ def main():
     app.add_handler(CommandHandler("addlink", addlink))
     app.add_handler(CommandHandler("checkdb", checkdb))
     app.add_handler(CommandHandler("migrate", migrate))
+    app.add_handler(CallbackQueryHandler(button_handler))
 
     print("BOT RUNNING...")
     app.run_polling()
