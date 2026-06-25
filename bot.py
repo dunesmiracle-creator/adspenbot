@@ -65,6 +65,8 @@ async def addlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("✅ Link saved")
     
 async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("🔥 NEW TIMER CODE RUNNING")
+    
     user_id = update.effective_user.id
     now = time.time()
     today = datetime.now().strftime("%Y-%m-%d")
