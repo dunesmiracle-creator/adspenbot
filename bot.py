@@ -81,21 +81,22 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     last = user_last_time.get(user_id, 0)
 
-    if now - last < COOLDOWN:
-       remaining_seconds = int(COOLDOWN - (now - last))
-       remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
+if now - last < COOLDOWN:
+    remaining_seconds = int(COOLDOWN - (now - last))
+    remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
 
-       minutes = remaining_seconds // 60
-       seconds = remaining_seconds % 60
+    minutes = remaining_seconds // 60
+    seconds = remaining_seconds % 60
 
     await update.message.reply_text(
         f"⏳ Wait {minutes}m {seconds}s\n"
         f"📊 Remaining today: {remaining_today}"
     )
     return
-    cursor.execute("SELECT url FROM links")
-    links = [row[0] for row in cursor.fetchall()]
 
+# ✅ THIS runs ONLY if cooldown is NOT active
+cursor.execute("SELECT url FROM links")
+links = [row[0] for row in cursor.fetchall()]
     if not links:
         await update.message.reply_text("No links available.")
         return
