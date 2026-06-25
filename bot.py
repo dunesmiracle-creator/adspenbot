@@ -8,6 +8,8 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+ADMIN_ID = 958970107
+
 COOLDOWN = 180  # 3 minutes
 DAILY_LIMIT = 150
 
@@ -26,6 +28,28 @@ def load_links():
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("AspenBot is active and running ✅")
+
+async def addlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
+    if user_id != ADMIN_ID:
+        await update.message.reply_text("❌ Not authorized.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("Usage: /addlink <url>")
+        return
+
+    new_link = " ".join(context.args).strip()
+
+    if not new_link.startswith("http"):
+        await update.message.reply_text("❌ Invalid link.")
+        return
+
+    with open("links.txt", "a") as f:
+        f.write(new_link + "\n")
+
+    await update.message.reply_text("✅ Link added")
 
 
 async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -84,6 +108,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("next", next_link))
+    app.add_handler(CommandHandler("addlink", addlink))
 
     print("BOT RUNNING...")
     app.run_polling()
