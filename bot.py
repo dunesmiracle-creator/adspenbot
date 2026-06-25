@@ -97,7 +97,7 @@ if now - last < COOLDOWN:
 # ✅ THIS runs ONLY if cooldown is NOT active
 cursor.execute("SELECT url FROM links")
 links = [row[0] for row in cursor.fetchall()]
-    if not links:
+     if not links:
         await update.message.reply_text("No links available.")
         return
 
