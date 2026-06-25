@@ -119,7 +119,12 @@ user_sent_links[user_id]["links"].add(link)
 user_last_time[user_id] = now
 user_daily_count[user_id]["count"] += 1
 
-    await update.message.reply_text(f"🔗 {link}")
+await update.message.reply_text(f"🔗 {link}")
+
+
+# =========================
+# NEW FUNCTION STARTS HERE
+# =========================
 
 async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -129,7 +134,6 @@ async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     count = cursor.fetchone()[0]
 
     await update.message.reply_text(f"Database has {count} links.")
-
 async def show_menu(update: Update):
     keyboard = [
         [InlineKeyboardButton("📩 Get Link", callback_data="next")],
