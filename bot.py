@@ -134,6 +134,7 @@ async def show_menu(update: Update):
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    print("BUTTON CLICKED:",query.data)
     await query.answer()
 
     if query.data == "next":
