@@ -31,13 +31,6 @@ user_last_time = {}
 user_daily_count = {}
 user_sent_links = {}
 
-def load_links():
-    try:
-        with open("links.txt", "r") as f:
-            return [line.strip() for line in f if line.strip()]
-    except FileNotFoundError:
-        return []
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("AspenBot is active and running ✅")
 
@@ -61,22 +54,24 @@ async def addlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cursor.execute("INSERT INTO links (url) VALUES (?)", (new_link,))
     conn.commit()
 
-    await update.message.reply_text("✅ Link saved to database")
+    await update.message.reply_text("✅ Link saved")
     
 async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    cursor.execute("SELECT id, url FROM links")
-    rows = cursor.fetchall()
+    user_id = update.effective_user.id
+    now = time.time()
+    today = datetime.now().strftime("%Y-%m-%d")
 
-    if not rows:
-        await update.message.reply_text("No links available.")
+    # reset daily tracking
+    if user_id not in user_daily_count or user_daily_count[user_id]["date"] != today:
+        user_daily_count[user_id] = {"date": today, "count": 0}
+        user_sent_links[user_id] = set()
+
+    # daily limit check
+    if user_daily_count[user_id]["count"] >= DAILY_LIMIT:
+        await update.message.reply_text("Daily limit reached.")
         return
 
-    selected = random.choice(rows)
-
-    link = selected[1]
-
-    await update.message.reply_text(f"🔗 {link}")
-
+    # cooldown check
     last = user_last_time.get(user_id, 0)
     if now - last < COOLDOWN:
         remaining = int((COOLDOWN - (now - last)) // 60) + 1
@@ -87,7 +82,23 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # DATABASE FETCH (ONLY SOURCE OF TRUTH)
+    cursor.execute("SELECT url FROM links")
+    rows = cursor.fetchall()
+
+    if not rows:
+        await update.message.reply_text("No links available.")
+        return
+
+    link = random.choice(rows)[0]
+
+    # update tracking AFTER successful send
+    user_last_time[user_id] = now
+    user_daily_count[user_id]["count"] += 1
+
+    await update.message.reply_text(f"🔗 {link}")
+
+async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
 
@@ -95,44 +106,7 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     count = cursor.fetchone()[0]
 
     await update.message.reply_text(f"Database has {count} links.")
-
-    # DATABASE LOGIC STARTS HERE
-    cursor.execute("SELECT id, url FROM links")
-    rows = cursor.fetchall()
-
-    if not rows:
-        await update.message.reply_text("No links available.")
-        return
-
-    selected = random.choice(rows)
-    link = selected[1]
-
-    user_last_time[user_id] = now
-    user_daily_count[user_id]["count"] += 1
-
-    await update.message.reply_text(f"🔗 {link}")
-
-    links = load_links()
-    available = [l for l in links if l not in user_sent_links[user_id]]
-
-    if not available:
-        await update.message.reply_text("No links left.")
-        return
-
-    link = random.choice(available)
-
-    user_sent_links[user_id].add(link)
-    user_last_time[user_id] = now
-    user_daily_count[user_id]["count"] += 1
-
-    remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
-
-    await update.message.reply_text(
-        f"✅ Your link:\n{link}\n\n"
-        f"⏳ Next link in 3 min\n"
-        f"📊 Remaining today: {remaining_today}"
-    )
-
+    
 def main():
     print("BOT STARTING...")
 
