@@ -64,35 +64,57 @@ async def addlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("✅ Link saved")
     
+
+
+async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    cursor.execute("SELECT COUNT(*) FROM links")
+    count = cursor.fetchone()[0]
+
+    await update.message.reply_text(f"Database has {count} links.")
+async def show_menu(update: Update):
+    keyboard = [
+        [InlineKeyboardButton("📩 Get Link", callback_data="next")],
+        [InlineKeyboardButton("📊 Stats", callback_data="stats")],
+        [InlineKeyboardButton("ℹ️ Help", callback_data="help")]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
 async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("🔥 NEW TIMER CODE RUNNING")
+    print("🔥 next_link triggered")
 
     user_id = update.effective_user.id
-now = time.time()
+    now = time.time()
 
-print("🔥 TIME DEBUG START")
-print(f"now = {now}")
-print(f"user_id = {user_id}")
-print(f"last = {user_last_time.get(user_id, 0)}")
-print(f"COOLDOWN = {COOLDOWN}")
-print(f"diff = {now - user_last_time.get(user_id, 0)}")
-print("🔥 TIME DEBUG END")
+    # 🔥 DEBUG TIME
+    print("🔥 TIME DEBUG START")
+    print(f"now = {now}")
+    print(f"user_id = {user_id}")
+    print(f"last = {user_last_time.get(user_id, 0)}")
+    print(f"COOLDOWN = {COOLDOWN}")
+    print(f"diff = {now - user_last_time.get(user_id, 0)}")
+    print("🔥 TIME DEBUG END")
 
-today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now().strftime("%Y-%m-%d")
 
-if user_id not in user_daily_count or user_daily_count[user_id]["date"] != today:
-    user_daily_count[user_id] = {"date": today, "count": 0}
-    user_sent_links[user_id] = {"date": today, "links": set()}
+    # 🔥 reset daily counters
+    if user_id not in user_daily_count or user_daily_count[user_id]["date"] != today:
+        user_daily_count[user_id] = {"date": today, "count": 0}
+        user_sent_links[user_id] = {"date": today, "links": set()}
 
-if user_daily_count[user_id]["count"] >= DAILY_LIMIT:
-    await update.message.reply_text("Daily limit reached.")
-    return
+    # 🔥 daily limit check
+    if user_daily_count[user_id]["count"] >= DAILY_LIMIT:
+        await update.message.reply_text("Daily limit reached.")
+        return
 
-last = user_last_time.get(user_id, 0)
+    last = user_last_time.get(user_id, 0)
 
-    # 🔴 COOLDOWN BLOCK (correctly indented)
+    # 🔴 COOLDOWN BLOCK
     if now - last < COOLDOWN:
-        remaining_seconds = int(COOLDOWN - (now - last)) // 60) + 1
+        remaining_seconds = int(COOLDOWN - (now - last))
         remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
 
         minutes = remaining_seconds // 60
@@ -104,7 +126,7 @@ last = user_last_time.get(user_id, 0)
         )
         return
 
-    # 🔵 NORMAL FLOW
+    # 🔵 FETCH LINKS
     cursor.execute("SELECT url FROM links")
     links = [row[0] for row in cursor.fetchall()]
 
@@ -122,29 +144,12 @@ last = user_last_time.get(user_id, 0)
 
     link = random.choice(available)
 
+    # 🔥 update state
     user_sent_links[user_id]["links"].add(link)
-
     user_last_time[user_id] = now
     user_daily_count[user_id]["count"] += 1
 
     await update.message.reply_text(f"🔗 {link}")
-async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID:
-        return
-
-    cursor.execute("SELECT COUNT(*) FROM links")
-    count = cursor.fetchone()[0]
-
-    await update.message.reply_text(f"Database has {count} links.")
-async def show_menu(update: Update):
-    keyboard = [
-        [InlineKeyboardButton("📩 Get Link", callback_data="next")],
-        [InlineKeyboardButton("📊 Stats", callback_data="stats")],
-        [InlineKeyboardButton("ℹ️ Help", callback_data="help")]
-    ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     await update.message.reply_text(
         "🚀 AspenBot Menu",
         reply_markup=reply_markup
