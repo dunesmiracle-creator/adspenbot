@@ -106,6 +106,26 @@ async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     count = cursor.fetchone()[0]
 
     await update.message.reply_text(f"Database has {count} links.")
+
+async def migrate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    try:
+        with open("links.txt", "r") as f:
+            links = [line.strip() for line in f if line.strip()]
+
+        count = 0
+        for link in links:
+            cursor.execute("INSERT INTO links (url) VALUES (?)", (link,))
+            count += 1
+
+        conn.commit()
+
+        await update.message.reply_text(f"✅ Migrated {count} links into database.")
+
+    except Exception as e:
+        await update.message.reply_text(f"❌ Migration failed: {e}")
     
 def main():
     print("BOT STARTING...")
@@ -120,6 +140,7 @@ def main():
     app.add_handler(CommandHandler("next", next_link))
     app.add_handler(CommandHandler("addlink", addlink))
     app.add_handler(CommandHandler("checkdb", checkdb))
+    app.add_handler(CommandHandler("migrate", migrate))
 
     print("BOT RUNNING...")
     app.run_polling()
