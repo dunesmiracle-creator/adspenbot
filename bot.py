@@ -66,7 +66,7 @@ async def addlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
 async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("🔥 NEW TIMER CODE RUNNING")
-    
+
     user_id = update.effective_user.id
     now = time.time()
     today = datetime.now().strftime("%Y-%m-%d")
@@ -76,28 +76,30 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_sent_links[user_id] = {"date": today, "links": set()}
 
     if user_daily_count[user_id]["count"] >= DAILY_LIMIT:
-       await update.message.reply_text("Daily limit reached.")
-       return
+        await update.message.reply_text("Daily limit reached.")
+        return
 
     last = user_last_time.get(user_id, 0)
 
-if now - last < COOLDOWN:
-    remaining_seconds = int(COOLDOWN - (now - last))
-    remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
+    # 🔴 COOLDOWN BLOCK (correctly indented)
+    if now - last < COOLDOWN:
+        remaining_seconds = int(COOLDOWN - (now - last))
+        remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
 
-    minutes = remaining_seconds // 60
-    seconds = remaining_seconds % 60
+        minutes = remaining_seconds // 60
+        seconds = remaining_seconds % 60
 
-    await update.message.reply_text(
-        f"⏳ Wait {minutes}m {seconds}s\n"
-        f"📊 Remaining today: {remaining_today}"
-    )
-    return
+        await update.message.reply_text(
+            f"⏳ Wait {minutes}m {seconds}s\n"
+            f"📊 Remaining today: {remaining_today}"
+        )
+        return
 
-# ✅ THIS runs ONLY if cooldown is NOT active
-cursor.execute("SELECT url FROM links")
-links = [row[0] for row in cursor.fetchall()]
-if not links:
+    # 🔵 NORMAL FLOW
+    cursor.execute("SELECT url FROM links")
+    links = [row[0] for row in cursor.fetchall()]
+
+    if not links:
         await update.message.reply_text("No links available.")
         return
 
@@ -117,10 +119,6 @@ if not links:
     user_daily_count[user_id]["count"] += 1
 
     await update.message.reply_text(f"🔗 {link}")
-# =========================
-# NEW FUNCTION STARTS HERE
-# =========================
-
 async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
