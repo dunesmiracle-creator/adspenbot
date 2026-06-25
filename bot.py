@@ -2,16 +2,20 @@ import os
 import time
 import random
 from datetime import datetime
-
 import sqlite3
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+    CallbackQueryHandler
+)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-
 ADMIN_ID = 958970107
 
+# ================= DB =================
 conn = sqlite3.connect("links.db", check_same_thread=False)
 cursor = conn.cursor()
 
@@ -21,19 +25,22 @@ CREATE TABLE IF NOT EXISTS links (
     url TEXT NOT NULL
 )
 """)
-
 conn.commit()
 
-COOLDOWN = 180  # 3 minutes
+# ================= SETTINGS =================
+COOLDOWN = 180
 DAILY_LIMIT = 150
 
 user_last_time = {}
 user_daily_count = {}
 user_sent_links = {}
 
+# ================= START =================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("AspenBot is active and running ✅")
+    await update.message.reply_text("🚀 AspenBot is active and running ✅")
+    await show_menu(update)
 
+# ================= ADD LINK =================
 async def addlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
@@ -55,23 +62,24 @@ async def addlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     conn.commit()
 
     await update.message.reply_text("✅ Link saved")
-    
+
+# ================= NEXT LINK =================
 async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     now = time.time()
     today = datetime.now().strftime("%Y-%m-%d")
 
     # reset daily tracking
-    if user_id not in user_daily_count or user_daily_count[user_id]["date"] != today:
+    if user_id not in user_daily_count or user_daily_count[user_id].get("date") != today:
         user_daily_count[user_id] = {"date": today, "count": 0}
         user_sent_links[user_id] = set()
 
-    # daily limit check
+    # daily limit
     if user_daily_count[user_id]["count"] >= DAILY_LIMIT:
         await update.message.reply_text("Daily limit reached.")
         return
 
-    # cooldown check
+    # cooldown
     last = user_last_time.get(user_id, 0)
     if now - last < COOLDOWN:
         remaining = int((COOLDOWN - (now - last)) // 60) + 1
@@ -82,50 +90,32 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # DATABASE FETCH (ONLY SOURCE OF TRUTH)
+    # DB fetch
     cursor.execute("SELECT url FROM links")
-links = [row[0] for row in cursor.fetchall()]
+    links = [row[0] for row in cursor.fetchall()]
 
-if not links:
-    await update.message.reply_text("No links available.")
-    return
+    if not links:
+        await update.message.reply_text("No links available.")
+        return
 
-today = datetime.now().strftime("%Y-%m-%d")
+    sent_today = user_sent_links[user_id]
 
-# init user storage
-if user_id not in user_sent_links:
-    user_sent_links[user_id] = {}
+    available = [l for l in links if l not in sent_today]
 
-# reset daily record if new day
-if user_sent_links[user_id].get("date") != today:
-    user_sent_links[user_id] = {"date": today, "links": set()}
+    if not available:
+        user_sent_links[user_id] = set()
+        available = links
 
-sent_today = user_sent_links[user_id]["links"]
+    link = random.choice(available)
 
-# filter out already sent links today
-available = [link for link in links if link not in sent_today]
+    user_sent_links[user_id].add(link)
 
-# if all used today → reset cycle
-if not available:
-    user_sent_links[user_id]["links"] = set()
-    available = links
+    user_last_time[user_id] = now
+    user_daily_count[user_id]["count"] += 1
 
-link = random.choice(available)
+    await update.message.reply_text(f"🔗 {link}")
 
-# mark as sent today
-user_sent_links[user_id]["links"].add(link)
-
-# update tracking AFTER successful send
-user_last_time[user_id] = now
-user_daily_count[user_id]["count"] += 1
-
-await update.message.reply_text(f"🔗 {link}")
-
-
-# =========================
-# NEW FUNCTION STARTS HERE
-# =========================
-
+# ================= STATS =================
 async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
@@ -133,7 +123,9 @@ async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cursor.execute("SELECT COUNT(*) FROM links")
     count = cursor.fetchone()[0]
 
-    await update.message.reply_text(f"Database has {count} links.")
+    await update.message.reply_text(f"📊 Database has {count} links")
+
+# ================= MENU =================
 async def show_menu(update: Update):
     keyboard = [
         [InlineKeyboardButton("📩 Get Link", callback_data="next")],
@@ -141,36 +133,28 @@ async def show_menu(update: Update):
         [InlineKeyboardButton("ℹ️ Help", callback_data="help")]
     ]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
     await update.message.reply_text(
         "🚀 AspenBot Menu",
-        reply_markup=reply_markup
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-async def button_handler(update: 
-Update, context: ContextTypes.DEFAULT_TYPE):
+# ================= BUTTON HANDLER =================
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
 
-async def migrate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID:
-        return
+    if query.data == "next":
+        await next_link(update, context)
 
-    try:
-        with open("links.txt", "r") as f:
-            links = [line.strip() for line in f if line.strip()]
+    elif query.data == "stats":
+        cursor.execute("SELECT COUNT(*) FROM links")
+        count = cursor.fetchone()[0]
+        await query.message.reply_text(f"📊 Total links: {count}")
 
-        count = 0
-        for link in links:
-            cursor.execute("INSERT INTO links (url) VALUES (?)", (link,))
-            count += 1
+    elif query.data == "help":
+        await query.message.reply_text("Use /addlink (admin) or press Get Link")
 
-        conn.commit()
-
-        await update.message.reply_text(f"✅ Migrated {count} links into database.")
-
-    except Exception as e:
-        await update.message.reply_text(f"❌ Migration failed: {e}")
-    
+# ================= MAIN =================
 def main():
     print("BOT STARTING...")
 
@@ -184,12 +168,11 @@ def main():
     app.add_handler(CommandHandler("next", next_link))
     app.add_handler(CommandHandler("addlink", addlink))
     app.add_handler(CommandHandler("checkdb", checkdb))
-    app.add_handler(CommandHandler("migrate", migrate))
+
     app.add_handler(CallbackQueryHandler(button_handler))
 
     print("BOT RUNNING...")
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
