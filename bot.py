@@ -74,17 +74,17 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_sent_links[user_id] = {"date": today, "links": set()}
 
     if user_daily_count[user_id]["count"] >= DAILY_LIMIT:
-        await update.message.reply_text("Daily limit reached.")
-        return
+       await update.message.reply_text("Daily limit reached.")
+       return
 
     last = user_last_time.get(user_id, 0)
 
     if now - last < COOLDOWN:
-    remaining_seconds = int(COOLDOWN - (now - last))
-    remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
+       remaining_seconds = int(COOLDOWN - (now - last))
+       remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
 
-    minutes = remaining_seconds // 60
-    seconds = remaining_seconds % 60
+       minutes = remaining_seconds // 60
+       seconds = remaining_seconds % 60
 
     await update.message.reply_text(
         f"⏳ Wait {minutes}m {seconds}s\n"
