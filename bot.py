@@ -83,7 +83,7 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # 🔴 COOLDOWN BLOCK (correctly indented)
     if now - last < COOLDOWN:
-        remaining_seconds = int(COOLDOWN - (now - last))
+        remaining_seconds = int(COOLDOWN - (now - last)) // 60) + 1
         remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
 
         minutes = remaining_seconds // 60
