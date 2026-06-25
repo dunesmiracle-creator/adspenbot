@@ -87,6 +87,15 @@ async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
+        return
+
+    cursor.execute("SELECT COUNT(*) FROM links")
+    count = cursor.fetchone()[0]
+
+    await update.message.reply_text(f"Database has {count} links.")
+
     # DATABASE LOGIC STARTS HERE
     cursor.execute("SELECT id, url FROM links")
     rows = cursor.fetchall()
@@ -136,6 +145,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("next", next_link))
     app.add_handler(CommandHandler("addlink", addlink))
+    app.add_handler(CommandHandler("checkdb", checkdb))
 
     print("BOT RUNNING...")
     app.run_polling()
