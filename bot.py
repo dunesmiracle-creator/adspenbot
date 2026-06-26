@@ -62,9 +62,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ---------------- CORE LOGIC ----------------
-async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-
+async def send_next_link(update, user_id):
     now = time.time()
     today = datetime.now().strftime("%Y-%m-%d")
 
@@ -119,6 +117,7 @@ async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_daily_count[user_id]["count"] += 1
 
     await update.message.reply_text(f"🔗 {link}")
+
 
 # ---------------- COMMAND ----------------
 async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
