@@ -62,7 +62,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---------------- CORE FUNCTION ----------------
 async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
+    user_id = update.effective_user.id if hasattr(update, "effective_user") else update.from_user.id
     now = time.time()
     today = datetime.now().strftime("%Y-%m-%d")
 
