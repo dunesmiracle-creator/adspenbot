@@ -79,7 +79,7 @@ async def send_next_link(update, user_id):
     last = user_last_time.get(user_id, 0)
 
     # cooldown check
-    if now - last < COOLDOWN:
+if now - last < COOLDOWN:
     remaining_seconds = int(COOLDOWN - (now - last))
     remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
 
@@ -91,7 +91,7 @@ async def send_next_link(update, user_id):
         f"📊 Remaining today: {remaining_today}"
     )
     return
-
+    
     # fetch links
     cursor.execute("SELECT url FROM links")
     rows = cursor.fetchall()
