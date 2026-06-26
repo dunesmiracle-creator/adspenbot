@@ -80,14 +80,17 @@ async def send_next_link(update, user_id):
 
     # cooldown check
     if now - last < COOLDOWN:
-        remaining_seconds = int(COOLDOWN - (now - last))
-        minutes = remaining_seconds // 60
-        seconds = remaining_seconds % 60
+    remaining_seconds = int(COOLDOWN - (now - last))
+    remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
 
-        await update.message.reply_text(
-            f"⏳ Wait {minutes}m {seconds}s"
-        )
-        return
+    minutes = remaining_seconds // 60
+    seconds = remaining_seconds % 60
+
+    await update.message.reply_text(
+        f"⏳ Wait {minutes}m {seconds}s\n"
+        f"📊 Remaining today: {remaining_today}"
+    )
+    return
 
     # fetch links
     cursor.execute("SELECT url FROM links")
