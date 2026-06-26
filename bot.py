@@ -126,7 +126,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     if query.data == "next":
-        await send_next_link(query, context)
+        update.effective_user = query.from_user
+        update.message = query.message
+        await send_next_link(update, context)
 
     elif query.data == "stats":
         cursor.execute("SELECT COUNT(*) FROM links")
