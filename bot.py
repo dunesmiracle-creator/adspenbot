@@ -62,7 +62,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---------------- CORE FUNCTION ----------------
 async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id if hasattr(update, "effective_user") else update.from_user.id
+    user_id = update.effective_user.id
     now = time.time()
     today = datetime.now().strftime("%Y-%m-%d")
 
@@ -126,9 +126,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     if query.data == "next":
-        update.effective_user = query.from_user
-        update.message = query.message
-        await send_next_link(update, context)
+        # IMPORTANT FIX: do NOT modify update object
+        fake_update = Update(
+            update.update_id,
+            callback_query=query
+        )
+        await send_next_link(fake_update, context)
 
     elif query.data == "stats":
         cursor.execute("SELECT COUNT(*) FROM links")
