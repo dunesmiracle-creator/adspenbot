@@ -78,7 +78,7 @@ async def send_next_link(update, user_id):
 
     last = user_last_time.get(user_id, 0)
 
-    # cooldown check
+# cooldown check
 if now - last < COOLDOWN:
     remaining_seconds = int(COOLDOWN - (now - last))
     remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
