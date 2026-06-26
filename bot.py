@@ -62,7 +62,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ---------------- CORE LOGIC ----------------
-async def send_next_link(update, user_id):
+async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
     now = time.time()
     today = datetime.now().strftime("%Y-%m-%d")
 
@@ -78,20 +80,20 @@ async def send_next_link(update, user_id):
 
     last = user_last_time.get(user_id, 0)
 
-# cooldown check
-if now - last < COOLDOWN:
-    remaining_seconds = int(COOLDOWN - (now - last))
-    remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
+    # cooldown check
+    if now - last < COOLDOWN:
+        remaining_seconds = int(COOLDOWN - (now - last))
+        remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
 
-    minutes = remaining_seconds // 60
-    seconds = remaining_seconds % 60
+        minutes = remaining_seconds // 60
+        seconds = remaining_seconds % 60
 
-    await update.message.reply_text(
-        f"⏳ Wait {minutes}m {seconds}s\n"
-        f"📊 Remaining today: {remaining_today}"
-    )
-    return
-    
+        await update.message.reply_text(
+            f"⏳ Wait {minutes}m {seconds}s\n"
+            f"📊 Remaining today: {remaining_today}"
+        )
+        return
+
     # fetch links
     cursor.execute("SELECT url FROM links")
     rows = cursor.fetchall()
@@ -117,7 +119,6 @@ if now - last < COOLDOWN:
     user_daily_count[user_id]["count"] += 1
 
     await update.message.reply_text(f"🔗 {link}")
-
 
 # ---------------- COMMAND ----------------
 async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
