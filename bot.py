@@ -4,7 +4,6 @@ import random
 from datetime import datetime
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
@@ -33,7 +32,7 @@ CREATE TABLE IF NOT EXISTS links (
 conn.commit()
 
 
-# ---------------- MEMORY STORAGE ----------------
+# ---------------- MEMORY ----------------
 user_last_time = {}
 user_daily_count = {}
 user_sent_links = {}
@@ -61,8 +60,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await show_menu(update)
 
 
-# ---------------- CORE LOGIC ----------------
-async def send_next_link(update, user_id):
+# ---------------- CORE FUNCTION ----------------
+async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
     now = time.time()
     today = datetime.now().strftime("%Y-%m-%d")
 
@@ -81,21 +81,17 @@ async def send_next_link(update, user_id):
     # cooldown check
     if now - last < COOLDOWN:
         remaining_seconds = int(COOLDOWN - (now - last))
-        remaining_today = DAILY_LIMIT - user_daily_count[user_id]["count"]
-
         minutes = remaining_seconds // 60
         seconds = remaining_seconds % 60
 
         await update.message.reply_text(
-            f"⏳ Wait {minutes}m {seconds}s\n"
-            f"📊 Remaining today: {remaining_today}"
+            f"⏳ Wait {minutes}m {seconds}s"
         )
         return
 
     # fetch links
     cursor.execute("SELECT url FROM links")
     rows = cursor.fetchall()
-
     links = [r[0] for r in rows]
 
     if not links:
@@ -121,17 +117,16 @@ async def send_next_link(update, user_id):
 
 # ---------------- COMMAND ----------------
 async def next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("🔥 next_link triggered")
-    await send_next_link(update, update.effective_user.id)
+    await send_next_link(update, context)
 
 
-# ---------------- BUTTONS ----------------
+# ---------------- BUTTON HANDLER ----------------
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     if query.data == "next":
-        await send_next_link(query, query.from_user.id)
+        await send_next_link(query, context)
 
     elif query.data == "stats":
         cursor.execute("SELECT COUNT(*) FROM links")
@@ -167,6 +162,31 @@ async def addlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("✅ Link saved")
 
 
+# ---------------- REMOVE LINK ----------------
+async def removelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
+    if user_id != ADMIN_ID:
+        await update.message.reply_text("❌ Not authorized.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("Usage: /removelink <url>")
+        return
+
+    link = " ".join(context.args).strip()
+
+    cursor.execute("SELECT url FROM links WHERE url = %s", (link,))
+    if not cursor.fetchone():
+        await update.message.reply_text("⚠️ Link not found.")
+        return
+
+    cursor.execute("DELETE FROM links WHERE url = %s", (link,))
+    conn.commit()
+
+    await update.message.reply_text("🗑️ Link removed")
+
+
 # ---------------- CHECK DB ----------------
 async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -193,6 +213,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("next", next_link))
     app.add_handler(CommandHandler("addlink", addlink))
+    app.add_handler(CommandHandler("removelink", removelink))
     app.add_handler(CommandHandler("checkdb", checkdb))
     app.add_handler(CallbackQueryHandler(button_handler))
 
