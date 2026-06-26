@@ -48,7 +48,7 @@ async def show_menu(update: Update):
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(
+    await update.effective_message.reply_text(
         "🚀 AspenBot Menu",
         reply_markup=reply_markup
     )
@@ -56,7 +56,7 @@ async def show_menu(update: Update):
 
 # ---------------- START ----------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("AspenBot is active and running ✅")
+    await update.effective_message.reply_text("AspenBot is active and running ✅")
     await show_menu(update)
 
 
@@ -73,7 +73,7 @@ async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # daily limit
     if user_daily_count[user_id]["count"] >= DAILY_LIMIT:
-        await update.message.reply_text("Daily limit reached.")
+        await update.effective_message.reply_text("Daily limit reached.")
         return
 
     last = user_last_time.get(user_id, 0)
@@ -84,7 +84,7 @@ async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         minutes = remaining_seconds // 60
         seconds = remaining_seconds % 60
 
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             f"⏳ Wait {minutes}m {seconds}s"
         )
         return
@@ -95,7 +95,7 @@ async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     links = [r[0] for r in rows]
 
     if not links:
-        await update.message.reply_text("No links available.")
+        await update.effective_message.reply_text("No links available.")
         return
 
     sent = user_sent_links[user_id]["links"]
@@ -112,7 +112,7 @@ async def send_next_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_last_time[user_id] = now
     user_daily_count[user_id]["count"] += 1
 
-    await update.message.reply_text(f"🔗 {link}")
+    await update.effective_message.reply_text(f"🔗 {link}")
 
 
 # ---------------- COMMAND ----------------
@@ -143,23 +143,23 @@ async def addlink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     if user_id != ADMIN_ID:
-        await update.message.reply_text("❌ Not authorized.")
+        await update.effective_message.reply_text("❌ Not authorized.")
         return
 
     if not context.args:
-        await update.message.reply_text("Usage: /addlink <url>")
+        await update.effective_message.reply_text("Usage: /addlink <url>")
         return
 
     link = " ".join(context.args).strip()
 
     if not link.startswith("http"):
-        await update.message.reply_text("❌ Invalid link.")
+        await update.effective_message.reply_text("❌ Invalid link.")
         return
 
     cursor.execute("INSERT INTO links (url) VALUES (%s)", (link,))
     conn.commit()
 
-    await update.message.reply_text("✅ Link saved")
+    await update.effective_message.reply_text("✅ Link saved")
 
 
 # ---------------- REMOVE LINK ----------------
@@ -167,24 +167,24 @@ async def removelink(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     if user_id != ADMIN_ID:
-        await update.message.reply_text("❌ Not authorized.")
+        await update.effective_message.reply_text("❌ Not authorized.")
         return
 
     if not context.args:
-        await update.message.reply_text("Usage: /removelink <url>")
+        await update.effective_message.reply_text("Usage: /removelink <url>")
         return
 
     link = " ".join(context.args).strip()
 
     cursor.execute("SELECT url FROM links WHERE url = %s", (link,))
     if not cursor.fetchone():
-        await update.message.reply_text("⚠️ Link not found.")
+        await update.effective_message.reply_text("⚠️ Link not found.")
         return
 
     cursor.execute("DELETE FROM links WHERE url = %s", (link,))
     conn.commit()
 
-    await update.message.reply_text("🗑️ Link removed")
+    await update.effective_message.reply_text("🗑️ Link removed")
 
 
 # ---------------- CHECK DB ----------------
@@ -195,7 +195,7 @@ async def checkdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cursor.execute("SELECT COUNT(*) FROM links")
     count = cursor.fetchone()[0]
 
-    await update.message.reply_text(f"Database has {count} links.")
+    await update.effective_message.reply_text(f"Database has {count} links.")
 
 
 # ---------------- MAIN ----------------
